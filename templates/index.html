@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Like Post App</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    {% load static %}
+    <script src="https://code.jquery.com/jquery-3.5.0.js" integrity="sha256-r/AaFHrszJtwpe+tHyNi/XCfMxYpbsRg2Uqn0x3s2zc=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/tabulator.css' %}">
+</head>
+<body>
+    <div class = "display-3 color-red"><center>DataFlair AJAX Tutorial</center></div>
+        <!-- {% for post in posts %}
+            <div class = 'container jumbotron'>
+                <h3 class="display-5">{{ forloop.counter }}. {{ post.post_heading }}</h3>
+                <p class="lead">{{ post.post_text }} </p>
+                <p>
+                    <div type="text/css" class = "container">Author : {{ post.post_author }}</div>
+                        <a class="likebutton btn btn-primary btn-lg" id="like{{ post.id }}" href="#" data-catid="{{ post.id }}">Like</a> </p> <p id="message{{post.id}}">
+                </p>
+            </div>
+            
+        {% endfor %} -->
+        <div class="container-fluid" id="results-table"></div>
+<script src="{% static 'js/tabulator.js' %}"></script>
+<script type="text/javascript">
+    $('.likebutton').click(function(){
+        var id;
+        id = $(this).attr("data-catid");
+        $.ajax(
+            {
+                type:"GET",
+                url: "like",
+                data:{
+                    post_id: id
+                    },
+                
+                success: function( data ) {
+                    $( '#like'+ id ).removeClass('btn btn-primary btn-lg');
+                    $( '#like'+ id ).addClass('btn btn-success btn-lg');
+                    console.log(data);
+                }
+            })
+        });
+        let results_json = {{ results | safe }};
+        let table = new Tabulator("#results-table", {
+            data:results_json,
+            height:"900px",
+            layout:"fitColumns",
+            columns:[
+                {title:"ステータス", field:"USER_CHECK", editor: "select", editorParams: {
+                    values: {"未": "未", "算定可": "算定可", "算定不可": "算定不可"}},
+                    headerFilter:"true",
+                    headerFilterFunc: "select", headerFilterParams: {values: ["未", "算定可", "算定不可"]}
+                },
+                {title:"患者ID", field:"PATIENT_ID"},
+                {title:"カルテ日付", field:"MEDICALCARE_DATE"},
+                {title:"診療科", field:"DEPT"},
+                {title:"診療行為名称", field:"ITEM_NAME"},
+                {title:"算定漏れ確率", field:"PREDICT_PROBA"},
+                {title:"コメント", field:"NOTE", editor: "input"},
+            ],
+            headerFilter:true,
+            cellEdited: function(cell) {
+                if (cell.getField() == "USER_CHECK") {
+                    let newValue = cell.getValue();
+                    let rowData = cell.getRow().getData();                    
+                    // Ajax送信を行うコードをここに書きます
+                    $.ajax({
+                        url: "update_user_check/",
+                        type: "GET",
+                        data: {
+                        id: rowData.id,
+                        user_check: rowData.USER_CHECK,
+                        },
+                        success: function(result) {
+                        console.log(result);
+                        },
+                        error: function(error) {
+                        console.log(error);
+                        }
+                    });
+                } else if (cell.getField() == "NOTE") {
+                    let newValue = cell.getValue();
+                    let rowData = cell.getRow().getData();  
+                    // Ajax送信を行うコードをここに書きます
+                    $.ajax({
+                        url: "update_note/",
+                        type: "GET",
+                        data: {
+                        id: rowData.id,
+                        note: rowData.NOTE,
+                        },
+                        success: function(result) {
+                        console.log(result);
+                        },
+                        error: function(error) {
+                        console.log(error);
+                        }
+                    });
+                }
+            }
+        });
+
+
+</script>
+</body>
+</html>
